@@ -10,7 +10,7 @@ Sphere::hit(const Ray& r, float t_min, float t_max) const noexcept
     float c            = oc.length_squared() - m_radius * m_radius;
     float delta        = b * b - a * c;
 
-    if (delta < 0.0f)
+    if (delta <= 0.0f)
         return std::nullopt;
 
     float sqrt_delta = std::sqrtf(delta);
@@ -21,7 +21,7 @@ Sphere::hit(const Ray& r, float t_min, float t_max) const noexcept
             return std::nullopt;
     }
 
-    HitResult res{ .hit_point = r.getOrigin() + root * ray_direction, .t = root };
+    HitResult res{ .hit_point = r.at(root), .t = root };
     Vec3 outward_normal = (res.hit_point - m_center) / m_radius;
 
     res.setFaceNormal(r, outward_normal);
