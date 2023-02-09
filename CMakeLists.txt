@@ -10,6 +10,10 @@ aux_source_directory(src DIR_SRC)
 
 add_executable(${PROJECT_NAME} ${DIR_SRC})
 
+target_precompile_headers(${PROJECT_NAME} PRIVATE
+    ${PROJECT_SOURCE_DIR}/src/pch.h
+)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Microsoft::DirectXMath
 )

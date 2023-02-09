@@ -1,5 +1,4 @@
-#ifndef RAYTRACER_VEC3_HPP
-#define RAYTRACER_VEC3_HPP
+#pragma once
 
 #include <DirectXMath.h>
 
@@ -142,5 +141,3 @@ operator*(float r, const Vec3& v) noexcept
 {
     return v * r;
 }
-
-#endif

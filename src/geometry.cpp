@@ -1,9 +1,7 @@
-#include <cmath>
-
-#include "geometry.hpp"
+#include "geometry.h"
 
 std::optional<HitResult>
-Sphere::hit(const Ray& r, float t_min, float t_max) const
+Sphere::hit(const Ray& r, float t_min, float t_max) const noexcept
 {
     Vec3 ray_direction = r.getDirection();
     Vec3 oc            = r.getOrigin() - m_center;
@@ -23,9 +21,10 @@ Sphere::hit(const Ray& r, float t_min, float t_max) const
             return std::nullopt;
     }
 
-    HitResult res{ .hit_point = r.getOrigin() + root * ray_direction,
-                   .normal    = (res.hit_point - m_center) / m_radius,
-                   .t         = root };
+    HitResult res{ .hit_point = r.getOrigin() + root * ray_direction, .t = root };
+    Vec3 outward_normal = (res.hit_point - m_center) / m_radius;
+
+    res.setFaceNormal(r, outward_normal);
 
     return res;
 }
