@@ -25,94 +25,106 @@ public:
     {
         auto ret = Vec3{};
         auto vec = DirectX::XMVectorNegate(XMLoadFloat3(&v));
-        XMStoreFloat3(&ret.v, vec);
+        DirectX::XMStoreFloat3(&ret.v, vec);
         return ret;
     }
 
     Vec3 operator+(const Vec3& other) const noexcept
     {
         auto ret = Vec3{};
-        auto vec = DirectX::XMVectorAdd(XMLoadFloat3(&v), XMLoadFloat3(&other.v));
-        XMStoreFloat3(&ret.v, vec);
+        auto vec = DirectX::XMVectorAdd(XMLoadFloat3(&v), DirectX::XMLoadFloat3(&other.v));
+        DirectX::XMStoreFloat3(&ret.v, vec);
         return ret;
     }
 
     Vec3& operator+=(const Vec3& other) noexcept
     {
-        auto vec = DirectX::XMVectorAdd(XMLoadFloat3(&v), XMLoadFloat3(&other.v));
-        XMStoreFloat3(&v, vec);
+        auto vec = DirectX::XMVectorAdd(XMLoadFloat3(&v), DirectX::XMLoadFloat3(&other.v));
+        DirectX::XMStoreFloat3(&v, vec);
         return *this;
     }
 
     Vec3 operator-(const Vec3& other) const noexcept
     {
         auto ret = Vec3{};
-        auto vec = DirectX::XMVectorSubtract(XMLoadFloat3(&v), XMLoadFloat3(&other.v));
-        XMStoreFloat3(&ret.v, vec);
+        auto vec = DirectX::XMVectorSubtract(XMLoadFloat3(&v), DirectX::XMLoadFloat3(&other.v));
+        DirectX::XMStoreFloat3(&ret.v, vec);
         return ret;
     }
 
     Vec3& operator-=(const Vec3& other) noexcept
     {
-        auto vec = DirectX::XMVectorSubtract(XMLoadFloat3(&v), XMLoadFloat3(&other.v));
-        XMStoreFloat3(&v, vec);
+        auto vec = DirectX::XMVectorSubtract(XMLoadFloat3(&v), DirectX::XMLoadFloat3(&other.v));
+        DirectX::XMStoreFloat3(&v, vec);
         return *this;
     }
 
     Vec3 operator*(const Vec3& other) const noexcept
     {
         auto ret = Vec3{};
-        auto vec = DirectX::XMVectorMultiply(XMLoadFloat3(&v), XMLoadFloat3(&other.v));
-        XMStoreFloat3(&ret.v, vec);
+        auto vec = DirectX::XMVectorMultiply(XMLoadFloat3(&v), DirectX::XMLoadFloat3(&other.v));
+        DirectX::XMStoreFloat3(&ret.v, vec);
         return ret;
     }
 
     Vec3& operator*=(const Vec3& other) noexcept
     {
-        auto vec = DirectX::XMVectorMultiply(XMLoadFloat3(&v), XMLoadFloat3(&other.v));
-        XMStoreFloat3(&v, vec);
+        auto vec = DirectX::XMVectorMultiply(XMLoadFloat3(&v), DirectX::XMLoadFloat3(&other.v));
+        DirectX::XMStoreFloat3(&v, vec);
         return *this;
     }
 
     Vec3 operator*(float r) const noexcept
     {
         auto ret = Vec3{};
-        XMStoreFloat3(&ret.v, XMLoadFloat3(&v) * r);
+        DirectX::XMStoreFloat3(&ret.v, DirectX::XMVectorScale(DirectX::XMLoadFloat3(&v), r));
         return ret;
     }
 
     Vec3& operator*=(float r) noexcept
     {
-        XMStoreFloat3(&v, XMLoadFloat3(&v) * r);
+        DirectX::XMStoreFloat3(&v, DirectX::XMVectorScale(DirectX::XMLoadFloat3(&v), r));
         return *this;
     }
 
     Vec3 operator/(float r) const noexcept
     {
         auto ret = Vec3{};
-        XMStoreFloat3(&ret.v, XMLoadFloat3(&v) / r);
+        DirectX::XMStoreFloat3(&ret.v, DirectX::XMVectorScale(DirectX::XMLoadFloat3(&v), 1.0f / r));
         return ret;
     }
 
     Vec3& operator/=(float r) noexcept
     {
-        XMStoreFloat3(&v, XMLoadFloat3(&v) / r);
+        DirectX::XMStoreFloat3(&v, DirectX::XMVectorScale(DirectX::XMLoadFloat3(&v), 1.0f / r));
         return *this;
     }
 
-    float length() const noexcept { return DirectX::XMVector3Length(XMLoadFloat3(&v))[0]; }
-    float length_squared() const noexcept { return DirectX::XMVector3LengthSq(XMLoadFloat3(&v))[0]; }
+    float length() const noexcept
+    {
+        float ret;
+        DirectX::XMStoreFloat(&ret, DirectX::XMVector3Length(XMLoadFloat3(&v)));
+        return ret;
+    }
+    float length_squared() const noexcept
+    {
+        float ret;
+        DirectX::XMStoreFloat(&ret, DirectX::XMVector3LengthSq(XMLoadFloat3(&v)));
+        return ret;
+    }
 
     float dot(const Vec3& other) const noexcept
     {
-        return DirectX::XMVector3Dot(XMLoadFloat3(&v), XMLoadFloat3(&other.v))[0];
+        float ret;
+        DirectX::XMStoreFloat(&ret, DirectX::XMVector3Dot(XMLoadFloat3(&v), DirectX::XMLoadFloat3(&other.v)));
+        return ret;
     }
 
     Vec3 cross(const Vec3& other) const noexcept
     {
         auto ret = Vec3{};
-        auto vec = DirectX::XMVector3Cross(XMLoadFloat3(&v), XMLoadFloat3(&other.v));
-        XMStoreFloat3(&ret.v, vec);
+        auto vec = DirectX::XMVector3Cross(XMLoadFloat3(&v), DirectX::XMLoadFloat3(&other.v));
+        DirectX::XMStoreFloat3(&ret.v, vec);
         return ret;
     }
 
@@ -120,7 +132,7 @@ public:
     {
         auto ret = Vec3{};
         auto vec = DirectX::XMVector3Normalize(XMLoadFloat3(&v));
-        XMStoreFloat3(&ret.v, vec);
+        DirectX::XMStoreFloat3(&ret.v, vec);
         return ret;
     }
 
