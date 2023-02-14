@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project(RayTracer)
 
 set(CMAKE_CXX_STANDARD 20)
+add_definitions(-DOUTPUT_DIR="${PROJECT_SOURCE_DIR}/picture/")
 
 find_package(directxmath CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
