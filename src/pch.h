@@ -1,7 +1,12 @@
 #pragma once
 
+#define _CRT_SECURE_NO_WARNINGS
+
+#define RAYTRACER_THREAD_NUM 11
+
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <format>
 #include <iostream>
@@ -11,6 +16,10 @@
 #include <random>
 #include <vector>
 
+#include <Windows.h>
+#include <omp.h>
+
+#include "third_party/stb_image_write.h"
 
 #include "ray.h"
 #include "vec3.h"
@@ -27,9 +36,10 @@ degrees_to_radians(float degrees)
 inline float
 random_float() noexcept
 {
-    static std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
-    static std::mt19937 generator;
-    return distribution(generator);
+    static std::uniform_real_distribution<float> distribution[RAYTRACER_THREAD_NUM];
+    static std::mt19937 generator[RAYTRACER_THREAD_NUM];
+    int num = omp_get_thread_num();
+    return distribution[num](generator[num]);
 }
 
 inline float

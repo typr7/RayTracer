@@ -4,13 +4,30 @@
 
 using namespace DirectX;
 
-void
-write_color(const Vec3& color)
+inline void
+write_color(std::vector<uint8_t>& dst, int index, const Vec3& color, int sample_number)
 {
-    std::cout << std::format("{} {} {} ",
-                             static_cast<int>(256 * std::clamp(color.x, 0.0f, 0.999f)),
-                             static_cast<int>(256 * std::clamp(color.y, 0.0f, 0.999f)),
-                             static_cast<int>(256 * std::clamp(color.z, 0.0f, 0.999f)));
+    auto out_color = color / static_cast<float>(sample_number);
+
+    out_color.x = std::sqrtf(out_color.x);
+    out_color.y = std::sqrtf(out_color.y);
+    out_color.z = std::sqrtf(out_color.z);
+
+    dst[index]     = static_cast<uint8_t>(256 * std::clamp(out_color.x, 0.0f, 0.999f));
+    dst[index + 1] = static_cast<uint8_t>(256 * std::clamp(out_color.y, 0.0f, 0.999f));
+    dst[index + 2] = static_cast<uint8_t>(256 * std::clamp(out_color.z, 0.0f, 0.999f));
+}
+
+inline Vec3
+random_unit_vector()
+{
+    Vec3 v;
+
+    do {
+        v = random_vec3(-1.0f, 1.0f);
+    } while (v.length_squared() >= 1.0f);
+
+    return v.normalize();
 }
 
 Vec3
@@ -22,16 +39,9 @@ ray_color(const Ray& r, const IHittable& world, int depth) noexcept
     auto hit_res = world.hit(r, 0.0001f, infinity);
     if (hit_res) {
         while (true) {
-            if (Vec3 v = random_vec3(-1.0f, 1.0f); v.length_squared() < 1.0f) {
-                Vec3 target = hit_res->hit_point + hit_res->normal + v;
-                return 0.5f * ray_color(Ray{ hit_res->hit_point, target - hit_res->hit_point }, world, depth - 1);
-            }
+            Vec3 target = hit_res->hit_point + hit_res->normal + random_unit_vector();
+            return 0.5f * ray_color(Ray{ hit_res->hit_point, target - hit_res->hit_point }, world, depth - 1);
         }
-        /*
-        Vec3 color = (hit_res->normal + Vec3{ 1.0f, 1.0f, 1.0f }) / 2.0f;
-        color.z = ((color.z * 2.0f) - 2.0f) / -2.0f;
-        return color;
-        */
     }
 
     Vec3 ur = r.getDirection().normalize();
@@ -44,13 +54,14 @@ int
 main()
 {
     // Image
-    static constexpr float aspect_ratio        = 16.0f / 9.0f;
-    static constexpr int image_width           = 960;
-    static constexpr int image_height          = static_cast<int>(image_width / aspect_ratio);
-    static constexpr int sample_number         = 1000;
-    static constexpr float sample_offset[9][2] = { -0.5f, -0.5f, 0.0f, -0.5f, 0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-                                                   0.0f,  0.5f,  0.0f, -0.5f, 0.5f, 0.0f,  0.5f,  0.5f, 0.5f };
-    static constexpr int max_depth             = 50;
+    static constexpr float aspect_ratio = 16.0f / 9.0f;
+    static constexpr int image_width    = 960;
+    static constexpr int image_height   = static_cast<int>(image_width / aspect_ratio);
+    static constexpr int sample_number  = 100;
+    static constexpr int max_depth      = 50;
+
+    std::vector<uint8_t> image_buffer(image_width * image_height * 3);
+
     // Camera
     Camera camera{ 16.0f / 9.0f, 2.0f, 1.0f };
 
@@ -59,11 +70,16 @@ main()
     world.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, 0.0f, 1.0f }, 0.5f));
     world.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, -100.5f, 1.0f }, 100.0f));
 
-    // Render
-    std::cout << std::format("P3\n{} {}\n255\n", image_width, image_height);
+    int remain = image_height;
+    omp_set_num_threads(RAYTRACER_THREAD_NUM);
 
-    for (int i = image_height - 1; i >= 0; i--) {
-        std::clog << std::format("\rScanlines remaining: {}", i) << std::flush;
+    LARGE_INTEGER t1, t2, freq;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&t1);
+    for (int i = 0; i < image_height; i++) {
+        --remain;
+        std::cout << std::format("\rScanlines remaining: {:4d}", remain) << std::flush;
+#pragma omp parallel for schedule(dynamic) shared(image_buffer)
         for (int j = 0; j < image_width; j++) {
             Vec3 pixel_color{ 0.0f, 0.0f, 0.0f };
 
@@ -73,10 +89,13 @@ main()
                 pixel_color += ray_color(camera.ray(u, v), world, max_depth);
             }
 
-            write_color(pixel_color / sample_number);
+            write_color(image_buffer, (i * image_width + j) * 3, pixel_color, sample_number);
         }
     }
-    std::clog << "\nDone.\n";
+    QueryPerformanceCounter(&t2);
+    stbi_write_png("../image.png", image_width, image_height, 3, image_buffer.data(), image_width * 3);
+    std::cout << "\nDone.\n";
+    std::cout << std::format("time: {}\n", (t2.QuadPart - t1.QuadPart) / static_cast<double>(freq.QuadPart));
 
     return 0;
 }

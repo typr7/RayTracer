@@ -10,7 +10,7 @@ public:
 
 private:
     Vec3 m_origin;
-    Vec3 m_bottom_left;
+    Vec3 m_top_left;
     Vec3 m_horizontal;
     Vec3 m_vertical;
 };

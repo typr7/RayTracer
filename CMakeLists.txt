@@ -5,6 +5,7 @@ project(RayTracer)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(directxmath CONFIG REQUIRED)
+find_package(OpenMP REQUIRED)
 
 aux_source_directory(src DIR_SRC)
 
@@ -15,5 +16,6 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    Microsoft::DirectXMath
+    $<$<CONFIG:Release>:Microsoft::DirectXMath>
+    $<$<CONFIG:Release>:OpenMP::OpenMP_CXX>
 )
