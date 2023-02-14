@@ -21,10 +21,10 @@ Sphere::hit(const Ray& r, float t_min, float t_max) const noexcept
             return std::nullopt;
     }
 
-    HitResult res{ .hit_point = r.at(root), .t = root };
+    HitResult res{ .hit_point = r.at(root), .t = root, .material = m_material };
     Vec3 outward_normal = (res.hit_point - m_center) / m_radius;
 
     res.setFaceNormal(r, outward_normal);
 
-    return res;
+    return std::optional(res);
 }

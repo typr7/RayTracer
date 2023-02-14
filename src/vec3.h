@@ -136,6 +136,12 @@ public:
         return ret;
     }
 
+    bool nearZero() const noexcept
+    {
+        static constexpr float s = 1e-8f;
+        return (std::fabs(x) < s) && (std::fabs(y) < s) && (std::fabs(z) < s);
+    }
+
     union
     {
         DirectX::XMFLOAT3 v;

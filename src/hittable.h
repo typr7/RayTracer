@@ -1,10 +1,13 @@
 #pragma once
 
+class Material;
+
 struct HitResult
 {
     Vec3 hit_point;
     Vec3 normal;
     float t;
+    std::shared_ptr<Material> material;
     bool front_face;
 
     inline void setFaceNormal(const Ray& r, const Vec3& outward_normal) noexcept
