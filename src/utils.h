@@ -62,3 +62,23 @@ reflect(const Vec3& incident_direction, const Vec3& normal) noexcept
 {
     return incident_direction - 2 * incident_direction.dot(normal) * normal;
 }
+
+inline Vec3
+sqrt_vec3(const Vec3& v) noexcept
+{
+    Vec3 ret;
+    DirectX::XMVECTOR vec = DirectX::XMVectorSqrt(DirectX::XMLoadFloat3(&v.v));
+    DirectX::XMStoreFloat3(&ret.v, vec);
+    return ret;
+}
+
+inline Vec3
+clamp_vec3(const Vec3& v, float min, float max) noexcept
+{
+    Vec3 ret;
+    DirectX::XMVECTOR vec = DirectX::XMVectorClamp(DirectX::XMLoadFloat3(&v.v),
+                                                   DirectX::XMVectorSet(min, min, min, min),
+                                                   DirectX::XMVectorSet(max, max, max, max));
+    DirectX::XMStoreFloat3(&ret.v, vec);
+    return ret;
+}

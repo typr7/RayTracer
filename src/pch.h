@@ -14,10 +14,8 @@
 #include <random>
 #include <vector>
 
-#include <Windows.h>
 #include <omp.h>
-
-#include "third_party/stb_image_write.h"
+#include <opencv2/opencv.hpp>
 
 #include "ray.h"
 #include "vec3.h"

@@ -6,18 +6,25 @@
 
 using namespace DirectX;
 
+struct R8G8B8
+{
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+};
+
 inline void
-write_color(std::vector<uint8_t>& dst, int index, const Vec3& color, int sample_number)
+write_color(R8G8B8& dst, const Vec3& color, int sample_number) noexcept
 {
     auto out_color = color / static_cast<float>(sample_number);
 
-    out_color.x = std::sqrtf(out_color.x);
-    out_color.y = std::sqrtf(out_color.y);
-    out_color.z = std::sqrtf(out_color.z);
+    out_color = sqrt_vec3(out_color);
+    out_color = clamp_vec3(out_color, 0.0f, 0.999f);
+    out_color *= 256.0f;
 
-    dst[index]     = static_cast<uint8_t>(256 * std::clamp(out_color.x, 0.0f, 0.999f));
-    dst[index + 1] = static_cast<uint8_t>(256 * std::clamp(out_color.y, 0.0f, 0.999f));
-    dst[index + 2] = static_cast<uint8_t>(256 * std::clamp(out_color.z, 0.0f, 0.999f));
+    dst.r = static_cast<uint8_t>(out_color.z);
+    dst.g = static_cast<uint8_t>(out_color.y);
+    dst.b = static_cast<uint8_t>(out_color.x);
 }
 
 Vec3
@@ -41,23 +48,27 @@ ray_color(const Ray& r, const IHittable& world, int depth) noexcept
 int
 main()
 {
+    omp_set_num_threads(thread_count);
+
     // Image
     static constexpr float aspect_ratio = 16.0f / 9.0f;
     static constexpr int image_width    = 960;
     static constexpr int image_height   = static_cast<int>(image_width / aspect_ratio);
-    static constexpr int sample_number  = 1000;
     static constexpr int max_depth      = 50;
+    // static constexpr int sample_per_loop = 3;
 
-    std::vector<uint8_t> image_buffer(image_width * image_height * 3);
+    std::vector<Vec3> color_buffer(image_width * image_height, Vec3{ 0.0f, 0.0f, 0.0f });
+    std::vector<R8G8B8> image_buffer(image_width * image_height);
+    cv::Mat image;
 
     // Camera
     Camera camera{ 16.0f / 9.0f, 2.0f, 1.0f };
 
     // Material
-    auto material_ground = std::make_shared<Lambertian>(Vec3{0.8f, 0.8f, 0.0f});
-    auto material_center = std::make_shared<Lambertian>(Vec3{0.7f, 0.3f, 0.3f});
-    auto material_left   = std::make_shared<Metal>(Vec3{0.8f, 0.8f, 0.8f}, 0.001f);
-    auto material_right  = std::make_shared<Metal>(Vec3{0.8f, 0.6f, 0.2f}, 0.1f);
+    auto material_ground = std::make_shared<Lambertian>(Vec3{ 0.8f, 0.8f, 0.0f });
+    auto material_center = std::make_shared<Lambertian>(Vec3{ 0.7f, 0.3f, 0.3f });
+    auto material_left   = std::make_shared<Metal>(Vec3{ 0.8f, 0.8f, 0.8f }, 0.001f);
+    auto material_right  = std::make_shared<Metal>(Vec3{ 0.8f, 0.6f, 0.2f }, 0.1f);
 
     // World
     HittableList world;
@@ -66,37 +77,35 @@ main()
     world.addObject(std::make_shared<Sphere>(Vec3{ -1.0f, 0.0f, 1.0f }, 0.5f, material_left));
     world.addObject(std::make_shared<Sphere>(Vec3{ 1.0f, 0.0f, 1.0f }, 0.5f, material_right));
 
-    // Timer
-    LARGE_INTEGER t1, t2, freq;
-    QueryPerformanceFrequency(&freq);
-    QueryPerformanceCounter(&t1);
-
     // Render
-    omp_set_num_threads(thread_count);
-    int remain = image_height;
-    for (int i = 0; i < image_height; i++) {
-        --remain;
-        std::cout << std::format("\rScanlines remaining: {:4d}", remain) << std::flush;
-#pragma omp parallel for schedule(dynamic) shared(image_buffer)
-        for (int j = 0; j < image_width; j++) {
-            Vec3 pixel_color{ 0.0f, 0.0f, 0.0f };
+    int sample_count = 0;
+    int key          = 0;
+    while (key != 27) {
+        if (sample_count > 100000)
+            continue;
+        sample_count++;
+        for (int i = 0; i < image_height; i++) {
+#pragma omp parallel for schedule(dynamic) \
+    shared(i, image_width, image_height, image_buffer, color_buffer, camera, world, max_depth, sample_count)
+            for (int j = 0; j < image_width; j++) {
+                auto& color = color_buffer[i * image_width + j];
 
-            for (int k = 0; k < sample_number; k++) {
                 float u = (j + random_float()) / (image_width - 1);
                 float v = (i + random_float()) / (image_height - 1);
-                pixel_color += ray_color(camera.ray(u, v), world, max_depth);
-            }
+                color += ray_color(camera.ray(u, v), world, max_depth);
 
-            write_color(image_buffer, (i * image_width + j) * 3, pixel_color, sample_number);
+                write_color(image_buffer[i * image_width + j], color, sample_count);
+            }
         }
+        image = cv::Mat{ image_height, image_width, CV_8UC3, image_buffer.data() };
+        cv::imshow("RayTracer", image);
+        key = cv::waitKey(1);
+
+        std::cout << std::format("\rsample count: {}", sample_count) << std::flush;
     }
 
-    QueryPerformanceCounter(&t2);
-
-    stbi_write_png(OUTPUT_DIR"image.png", image_width, image_height, 3, image_buffer.data(), image_width * 3);
-    std::cout << "\nDone.\n";
-    std::cout << std::format("number of computation threads: {}\n", thread_count);
-    std::cout << std::format("time: {}\n", (t2.QuadPart - t1.QuadPart) / static_cast<double>(freq.QuadPart));
+    cv::imwrite(OUTPUT_DIR "image.png", image);
+    std::cout << "\nExit.\n";
 
     return 0;
 }
