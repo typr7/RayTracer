@@ -47,6 +47,6 @@ Dielectric::reflectance(float cos, float refractive_indices_ratio) noexcept
 {
     // Use Schlick's approximation for reflectance.
     float r0 = (1.0f - refractive_indices_ratio) / (1.0f + refractive_indices_ratio);
-    r0      = r0 * r0;
+    r0       = r0 * r0;
     return r0 + (1.0f - r0) * powf((1.0f - cos), 5.0f);
 }

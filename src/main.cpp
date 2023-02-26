@@ -62,22 +62,23 @@ main()
     std::vector<R8G8B8> image_buffer(image_width * image_height);
     cv::Mat image;
 
-    // Camera
-    Camera camera{ 16.0f / 9.0f, 2.0f, 1.0f };
-
-    // Material
     auto material_ground = std::make_shared<Lambertian>(Vec3{ 0.8f, 0.8f, 0.0f });
     auto material_center = std::make_shared<Lambertian>(Vec3{ 0.1f, 0.2f, 0.5f });
-    auto material_left = std::make_shared<Dielectric>(1.5f);
-    auto material_right  = std::make_shared<Metal>(Vec3{ 0.8f, 0.6f, 0.2f }, 0.0f);
+    auto material_left   = std::make_shared<Dielectric>(1.5f);
+    auto material_right  = std::make_shared<Metal>(Vec3{ 0.8f, 0.6f, 0.2f }, 0.01f);
 
-    // World
     HittableList world;
-    world.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, -100.5f, 1.0f }, 100.0f, material_ground));
-    world.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, 0.0f, 1.0f }, 0.5f, material_center));
-    world.addObject(std::make_shared<Sphere>(Vec3{ -1.0f, 0.0f, 1.0f }, 0.5f, material_left));
-    world.addObject(std::make_shared<Sphere>(Vec3{ 1.0f, 0.0f, 1.0f }, 0.5f, material_right));
+    world.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, -100.5f, 0.0f }, 100.0f, material_ground));
+    world.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, 0.0f, 0.0f }, 0.5f, material_center));
+    world.addObject(std::make_shared<Sphere>(Vec3{ -1.0f, 0.0f, 0.0f }, 0.5f, material_left));
+    world.addObject(std::make_shared<Sphere>(Vec3{ -1.0f, 0.0f, 0.0f }, -0.47f, material_left));
+    world.addObject(std::make_shared<Sphere>(Vec3{ 1.1f, 0.0f, 0.0f }, 0.5f, material_right));
 
+    Camera camera{ Vec3{ -2.0f, 2.0f, -1.5f },
+                   Vec3{ 0.0f, 0.0f, 0.0f },
+                   Vec3{ 0.0f, 1.0f, 0.0f },
+                   pi / 3.0f,
+                   aspect_ratio };
 
     // Render
     int sample_count = 0;

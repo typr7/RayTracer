@@ -3,7 +3,7 @@
 class Camera
 {
 public:
-    Camera(float aspect_ratio, float viewport_height, float focal_length) noexcept;
+    Camera(Vec3 origin, Vec3 target, Vec3 up, float vfov, float aspect_ratio) noexcept;
     ~Camera() noexcept = default;
 
     Ray ray(float u, float v) const noexcept;

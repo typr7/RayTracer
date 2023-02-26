@@ -1,20 +1,26 @@
 #include "camera.h"
 
-Camera::Camera(float aspect_ratio, float viewport_height, float focal_length) noexcept
-    : m_origin{ 0.0f, 0.0f, 0.0f }
+Camera::Camera(Vec3 origin, Vec3 target, Vec3 up, float vfov, float aspect_ratio) noexcept
+    : m_origin{ origin }
     , m_top_left{}
     , m_horizontal{}
     , m_vertical{}
 {
-    float viewport_width = viewport_height * aspect_ratio;
+    float h               = tanf(vfov / 2);
+    float viewport_height = 2.0f * h;
+    float viewport_width  = aspect_ratio * viewport_height;
 
-    m_horizontal = Vec3{ viewport_width, 0.0f, 0.0f };
-    m_vertical   = Vec3{ 0.0f, -viewport_height, 0.0f };
-    m_top_left   = m_origin - m_horizontal / 2 - m_vertical / 2 + Vec3{ 0.0f, 0.0f, focal_length };
+    Vec3 w = (target - origin).normalize();
+    Vec3 u = up.cross(w).normalize();
+    Vec3 v = w.cross(u);
+
+    m_horizontal = viewport_width * u;
+    m_vertical   = -viewport_height * v;
+    m_top_left   = m_origin - m_horizontal / 2.0f - m_vertical / 2.0f + w;
 }
 
 Ray
-Camera::ray(float u, float v) const noexcept
+Camera::ray(float s, float t) const noexcept
 {
-    return Ray(m_origin, m_top_left + u * m_horizontal + v * m_vertical - m_origin);
+    return Ray(m_origin, m_top_left + s * m_horizontal + t * m_vertical - m_origin);
 }
