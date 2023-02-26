@@ -49,6 +49,7 @@ int
 main()
 {
     omp_set_num_threads(thread_count);
+    std::cout << std::format("{} threads are being used.\n", thread_count);
 
     // Image
     static constexpr float aspect_ratio = 16.0f / 9.0f;
@@ -66,9 +67,9 @@ main()
 
     // Material
     auto material_ground = std::make_shared<Lambertian>(Vec3{ 0.8f, 0.8f, 0.0f });
-    auto material_center = std::make_shared<Lambertian>(Vec3{ 0.7f, 0.3f, 0.3f });
-    auto material_left   = std::make_shared<Metal>(Vec3{ 0.8f, 0.8f, 0.8f }, 0.001f);
-    auto material_right  = std::make_shared<Metal>(Vec3{ 0.8f, 0.6f, 0.2f }, 0.1f);
+    auto material_center = std::make_shared<Lambertian>(Vec3{ 0.1f, 0.2f, 0.5f });
+    auto material_left = std::make_shared<Dielectric>(1.5f);
+    auto material_right  = std::make_shared<Metal>(Vec3{ 0.8f, 0.6f, 0.2f }, 0.0f);
 
     // World
     HittableList world;
@@ -76,6 +77,7 @@ main()
     world.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, 0.0f, 1.0f }, 0.5f, material_center));
     world.addObject(std::make_shared<Sphere>(Vec3{ -1.0f, 0.0f, 1.0f }, 0.5f, material_left));
     world.addObject(std::make_shared<Sphere>(Vec3{ 1.0f, 0.0f, 1.0f }, 0.5f, material_right));
+
 
     // Render
     int sample_count = 0;

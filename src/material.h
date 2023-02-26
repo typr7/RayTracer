@@ -30,3 +30,16 @@ private:
     Vec3 m_albedo;
     float m_fuzz;
 };
+
+class Dielectric : public Material
+{
+public:
+    Dielectric(float refractive_index) noexcept : m_refractive_index{ refractive_index } {}
+
+    virtual std::optional<std::pair<Ray, Vec3>> scatter(const Ray& r, const HitResult& res) const noexcept override;
+
+private:
+    float m_refractive_index;
+
+    static float reflectance(float cos, float refractice_indices_ratio) noexcept;
+};

@@ -64,6 +64,15 @@ reflect(const Vec3& incident_direction, const Vec3& normal) noexcept
 }
 
 inline Vec3
+refract(const Vec3& incident_direction, const Vec3& normal, float etai_over_etat) noexcept
+{
+    float cos_theta = fmin(normal.dot(-incident_direction), 1.0f);
+    Vec3 refracted_perp = etai_over_etat * (incident_direction + cos_theta * normal);
+    Vec3 refracted_parallel = -sqrtf(fabs(1.0f - refracted_perp.length_squared())) * normal;
+    return refracted_perp  + refracted_parallel;
+}
+
+inline Vec3
 sqrt_vec3(const Vec3& v) noexcept
 {
     Vec3 ret;
