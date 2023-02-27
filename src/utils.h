@@ -1,16 +1,11 @@
 #pragma once
 
 inline float
-degrees_to_radians(float degrees) noexcept
-{
-    return degrees * pi / 180.0f;
-}
-
-inline float
 random_float() noexcept
 {
+    static std::random_device rd;
+    static std::vector<std::mt19937> generator(thread_count, std::mt19937{rd()});
     static std::vector<std::uniform_real_distribution<float>> distribution(thread_count);
-    static std::vector<std::mt19937> generator(thread_count);
     int num = omp_get_thread_num();
     return distribution[num](generator[num]);
 }
@@ -30,30 +25,43 @@ random_vec3() noexcept
 inline Vec3
 random_vec3(float min, float max) noexcept
 {
-    return Vec3{ random_float(min, max), random_float(min, max), random_float(min, max) };
+    return Vec3{ min, min, min } + (max - min) * random_vec3();
 }
 
 inline Vec3
-random_vector() noexcept
+random_vector_in_unit_sphere() noexcept
 {
-    Vec3 v;
+    Vec3 ret;
     while (true) {
-        v = random_vec3(-1.0f, 1.0f);
-        if (v.length_squared() <= 1.0f)
-            return v;
+        ret = random_vec3(-1.0f, 1.0f);
+        if (ret.length_squared() <= 1.0f)
+            break;
     }
+    return ret;
 };
 
 inline Vec3
-random_unit_vector() noexcept
+random_unit_vector_in_unit_sphere() noexcept
 {
-    return random_vector().normalize();
+    return random_vector_in_unit_sphere().normalize();
 };
 
 inline Vec3
-random_in_hemisphere(const Vec3& normal) noexcept
+random_vector_in_unit_disk() noexcept
 {
-    Vec3 vec = random_vector();
+    Vec3 ret;
+    while (true) {
+        ret = Vec3{ random_float(-1.0f, 1.0f), random_float(-1.0f, 1.0f), 0.0f };
+        if (ret.length_squared() <= 1.0f)
+            break;
+    }
+    return ret;
+}
+
+inline Vec3
+random_vector_in_unit_hemisphere(const Vec3& normal) noexcept
+{
+    Vec3 vec = random_vector_in_unit_sphere();
     return vec.dot(normal) > 0.0f ? vec : -vec;
 };
 
@@ -66,10 +74,10 @@ reflect(const Vec3& incident_direction, const Vec3& normal) noexcept
 inline Vec3
 refract(const Vec3& incident_direction, const Vec3& normal, float etai_over_etat) noexcept
 {
-    float cos_theta = fmin(normal.dot(-incident_direction), 1.0f);
-    Vec3 refracted_perp = etai_over_etat * (incident_direction + cos_theta * normal);
+    float cos_theta         = fmin(normal.dot(-incident_direction), 1.0f);
+    Vec3 refracted_perp     = etai_over_etat * (incident_direction + cos_theta * normal);
     Vec3 refracted_parallel = -sqrtf(fabs(1.0f - refracted_perp.length_squared())) * normal;
-    return refracted_perp  + refracted_parallel;
+    return refracted_perp + refracted_parallel;
 }
 
 inline Vec3

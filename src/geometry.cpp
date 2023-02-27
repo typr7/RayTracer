@@ -26,5 +26,5 @@ Sphere::hit(const Ray& r, float t_min, float t_max) const noexcept
 
     res.setFaceNormal(r, outward_normal);
 
-    return std::optional(res);
+    return res;
 }

@@ -4,8 +4,6 @@
 #include "material.h"
 #include "utils.h"
 
-using namespace DirectX;
-
 struct R8G8B8
 {
     uint8_t r;
@@ -45,6 +43,49 @@ ray_color(const Ray& r, const IHittable& world, int depth) noexcept
     return (1.0f - t) * Vec3{ 1.0f, 1.0f, 1.0f } + t * Vec3{ 0.5f, 0.7f, 1.0f };
 }
 
+HittableList
+create_random_scene() noexcept
+{
+    HittableList scene;
+
+    auto ground_material = std::make_shared<Lambertian>(Vec3{ 0.5, 0.5f, 0.5f });
+    scene.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, -500.0f, 0.0f }, 500.01f, ground_material));
+
+    for (int i = -11; i < 8; i++) {
+        for (int j = -7; j < 4; j++) {
+            auto choose_material = random_float();
+            auto center          = Vec3{ i + 0.9f * random_float(), 0.2f, j + 0.9f * random_float() };
+
+            if ((center - Vec3{ 4.0f, 0.2f, 0.0f }).length() > 0.9f) {
+                if (choose_material < 0.8f) {
+                    auto albedo   = random_vec3() * random_vec3();
+                    auto material = std::make_shared<Lambertian>(albedo);
+                    scene.addObject(std::make_shared<Sphere>(center, 0.2f, material));
+                } else if (choose_material < 0.95f) {
+                    auto albedo   = random_vec3(0.5f, 1.0f);
+                    auto fuzz     = random_float(0.0f, 0.5f);
+                    auto material = std::make_shared<Metal>(albedo, fuzz);
+                    scene.addObject(std::make_shared<Sphere>(center, 0.2f, material));
+                } else {
+                    auto material = std::make_shared<Dielectric>(1.5f);
+                    scene.addObject(std::make_shared<Sphere>(center, 0.2f, material));
+                }
+            }
+        }
+    }
+
+    auto material1 = std::make_shared<Dielectric>(1.5f);
+    scene.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, 0.7f, 0.0f }, 0.7f, material1));
+
+    auto material2 = std::make_shared<Lambertian>(Vec3{ 0.4f, 0.2f, 0.1f });
+    scene.addObject(std::make_shared<Sphere>(Vec3{ -4.0f, 0.7f, 0.0f }, 0.7f, material2));
+
+    auto material3 = std::make_shared<Metal>(Vec3{ 0.7f, 0.6f, 0.5f }, 0.0f);
+    scene.addObject(std::make_shared<Sphere>(Vec3{ 4.0f, 0.7f, 0.0f }, 0.7f, material3));
+
+    return scene;
+}
+
 int
 main()
 {
@@ -53,7 +94,7 @@ main()
 
     // Image
     static constexpr float aspect_ratio = 16.0f / 9.0f;
-    static constexpr int image_width    = 960;
+    static constexpr int image_width    = 1920;
     static constexpr int image_height   = static_cast<int>(image_width / aspect_ratio);
     static constexpr int max_depth      = 50;
     // static constexpr int sample_per_loop = 3;
@@ -62,23 +103,28 @@ main()
     std::vector<R8G8B8> image_buffer(image_width * image_height);
     cv::Mat image;
 
+    /*
     auto material_ground = std::make_shared<Lambertian>(Vec3{ 0.8f, 0.8f, 0.0f });
     auto material_center = std::make_shared<Lambertian>(Vec3{ 0.1f, 0.2f, 0.5f });
     auto material_left   = std::make_shared<Dielectric>(1.5f);
-    auto material_right  = std::make_shared<Metal>(Vec3{ 0.8f, 0.6f, 0.2f }, 0.01f);
+    auto material_right  = std::make_shared<Metal>(Vec3{ 0.8f, 0.6f, 0.2f }, 0.03f);
 
     HittableList world;
     world.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, -100.5f, 0.0f }, 100.0f, material_ground));
     world.addObject(std::make_shared<Sphere>(Vec3{ 0.0f, 0.0f, 0.0f }, 0.5f, material_center));
-    world.addObject(std::make_shared<Sphere>(Vec3{ -1.0f, 0.0f, 0.0f }, 0.5f, material_left));
-    world.addObject(std::make_shared<Sphere>(Vec3{ -1.0f, 0.0f, 0.0f }, -0.47f, material_left));
-    world.addObject(std::make_shared<Sphere>(Vec3{ 1.1f, 0.0f, 0.0f }, 0.5f, material_right));
+    world.addObject(std::make_shared<Sphere>(Vec3{ 1.0f, 0.0f, 0.0f }, 0.5f, material_left));
+    world.addObject(std::make_shared<Sphere>(Vec3{ 1.0f, 0.0f, 0.0f }, -0.47f, material_left));
+    world.addObject(std::make_shared<Sphere>(Vec3{ -1.1f, 0.0f, 0.0f }, 0.5f, material_right));
+    */
 
-    Camera camera{ Vec3{ -2.0f, 2.0f, -1.5f },
-                   Vec3{ 0.0f, 0.0f, 0.0f },
-                   Vec3{ 0.0f, 1.0f, 0.0f },
-                   pi / 3.0f,
-                   aspect_ratio };
+    HittableList world = create_random_scene();
+
+    auto origin        = Vec3{ 13.0f, 2.0f, 3.0f };
+    auto target        = Vec3{ 0.0f, 0.0f, 0.0f };
+    auto dist_to_focus = 10.0f;
+    auto aperture      = 0.1f;
+
+    auto camera = Camera{ origin, target, Vec3{ 0.0f, 1.0f, 0.0f }, pi / 9.0f, aspect_ratio, aperture, dist_to_focus };
 
     // Render
     int sample_count = 0;
@@ -108,7 +154,7 @@ main()
     }
 
     cv::imwrite(OUTPUT_DIR "image.png", image);
-    std::cout << "\nExit.\n";
+    std::cout << "\nDone.\n";
 
     return 0;
 }
