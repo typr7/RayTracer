@@ -5,7 +5,7 @@ Simple Material
 Fuzzy Effect (for Metal)  
 Positionable Camera  
 Defocus Blur  
-A future
+Future
 # Picture
 ![image](picture/image.png)
 # Reference
